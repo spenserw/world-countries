@@ -1,0 +1,166 @@
+<hmtl>
+  <head>
+	<title>Countries of the World</title>
+
+	<style>
+	  path:hover {
+		  fill: rgba(252, 141, 89, 1.0) !important;
+	  }
+
+	  path.selected {
+		  fill: rgb(255, 255, 0) !important;
+	  }
+
+	  path.complete {
+		  fill: rgb(0, 0, 255) !important;
+	  }
+	</style>
+  </head>
+  <body>
+	<script src="./dist/d3.js"></script>
+	<script src="./dist/topojson.js"></script>
+	<script src="./dist/datamaps.world.hires.js"></script>
+
+	<div id="info">
+	  <span id="info-options">
+		<label for="input-show-country-names">Show names: </label>
+		<input id="input-show-country-names" name="input-show-country-names" type="checkbox" />
+	  </span>
+	  <br />
+	  <span id="info-banner">
+		<span id="info-score"></span> |
+		<span id="info-missed"></span>
+	  </span>
+	  <br />
+	  <span id="identify">
+		<label for="identify-input">Country name: </label>
+		<input id="identify-input" name="identify-input" />
+		<span id="identify-input-cancel"><a href="#">Cancel</a></span>
+	  </span>
+	</div>
+	<div id="map-container" style="position: relative; width: 900px; height: 600px;" />
+	<script>
+	  var countries = Datamap.prototype.worldTopo.objects.world.geometries
+		  .map((geom) => ({ id: geom.id, name: geom.properties.name, identified: false }))
+		  .reduce((a, c) => {
+			  a[c.id] = c;
+			  return a;
+		  }, {});
+
+	  var state = {
+		  selectedCountry: null,
+		  completeCount: -1,
+		  missedCount: -1,
+
+		  showCountryNames: false
+	  };
+
+	  document.getElementById("input-show-country-names").addEventListener('click', function(event) {
+		  state.showCountryNames = event.target.checked;
+	  });
+
+	  function addScore () {
+		  state.completeCount += 1;
+		  document.getElementById("info-score").innerHTML = 'Score: ' + state.completeCount + '/' + Object.keys(countries).length;
+	  }
+
+	  function addMissed () {
+		  state.missedCount += 1;
+		  document.getElementById("info-missed").innerHTML = 'Missed: ' + state.missedCount;
+	  }
+
+	  var identifyInputElement = document.getElementById("identify-input");
+
+	  function focusIdentifyInput () {
+		  identifyInputElement.disabled = false;
+		  identifyInputElement.focus();
+	  }
+
+	  function unfocusIdentifyInput () {
+		  identifyInputElement.value = '';
+		  identifyInputElement.disabled = true;
+	  }
+	  document.getElementById("identify-input-cancel").onclick = function () {
+		  unfocusIdentifyInput();
+		  resetCountrySelection(map);
+	  }
+
+	  function selectCountry (countryId, element, datamap) {
+		  resetCountrySelection(datamap);
+		  state.selectedCountry = countryId;
+		  element.classList.add('selected');
+	  }
+
+	  function resetCountrySelection (datamap) {
+		  state.selectedCountry = null;
+		  datamap.svg.selectAll('.datamaps-subunit')[0].forEach((path)=>{
+			  path.classList.remove('selected');
+		  });
+	  }
+
+	  function identifyCountry (countryId, value) {
+		  if(countries[countryId].name == value) {
+			  countries[countryId].identified = true;
+			  addScore();
+
+			  // Color path accordingly
+			  let subunits = Object.entries(map.svg.selectAll('.datamaps-subunit')[0]);
+			  for(let i = 0; i < subunits.length; i++) {
+				  if(subunits[i][1].__data__.id == countryId) {
+					  subunits[i][1].classList.add('complete');
+					  unfocusIdentifyInput(map);
+
+					  return;
+				  }
+			  }
+		  } else {
+			  addMissed();
+		  }
+	  }
+
+	  function identifyInputKeypress (event) {
+		  if(event.code == "Enter") {
+			  identifyCountry(state.selectedCountry, identifyInputElement.value);
+		  }
+	  }
+	  identifyInputElement.onkeypress = identifyInputKeypress;
+
+	  var map = new Datamap({
+		  element: document.getElementById('map-container'),
+		  data: {},
+		  geographyConfig: {
+			  highlightOnHover: false,
+              popupOnHover: true,
+			  popupTemplate: function(geo, data) {
+				  let name = ((countries[geo.id].identified || state.showCountryNames) ? geo.properties.name : '???');
+                  return '<div class="hoverinfo"> Name: ' + name + ' </div>';
+              }
+		  },
+		  done: function(datamap) {
+			  // Initialize
+			  unfocusIdentifyInput();
+			  addScore();
+			  addMissed();
+
+			  // Options
+
+			  // Zoom
+			  datamap.svg.call(d3.behavior.zoom().on("zoom", redraw));
+			  function redraw() {
+				  // Floor the values to avoid bluriness in rendering
+                  datamap.svg.selectAll("g").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+			  }
+
+			  // Click
+              datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
+				  // If we are actually clicking and dragging, cancel selection
+				  if(d3.event.defaultPrevented) return;
+
+				  selectCountry(geography.id, this, datamap);
+				  focusIdentifyInput();
+              });
+		  }
+	  });
+	</script>
+  </body>
+</html>
