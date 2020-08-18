@@ -1,0 +1,36 @@
+* Notes
+TODO:
+- Merge Greenland with Denmark
+
+- List of name changes:
+  - +The bahamas+
+  - +Palestine+
+  - +Syria+
+  - +Moldova+
+  - Bosnia
+  - +Laos+
+  - +Russia+
+  - +Brunei+
+  - Democratic Republic of the Congo
+  - Republic of the Congo
+  - Iran
+  - Korea
+  - North Korea
+  - Venezuala
+  - Vatican City
+  - Cote d-Ivoire
+  - Bolivia
+
+- Objects removed:
+  - +Faroe islands+
+  - +Svalbard and Jan Mayen+
+  - New Caledonia
+  - Aruba
+  - Anguilla
+  - 
+
+- Up for debate for removal:
+  - Norhtern Cyprus
+  - West Sahara
+  - French Guiana
+  - Somaliland
